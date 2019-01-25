@@ -10,7 +10,18 @@ Pod::Spec.new do |s|
     'Eric Marchand' => 'eric.marchand.n7@gmail.com'
   }
   s.source = { git: 'https://github.com/OAuthSwift/OAuthSwift.git', tag: s.version }
-  s.source_files = 'Sources/*.swift'
+
+  s.default_subspec = 'Core' do |core|
+    core.source_files = 'Sources/*.swift'
+  end
+
+  s.subspec = 'AppExtension' do |ext|
+    ext.source_files = 'Sources/*.swift'
+    # For app extensions, disabling code paths using unavailable API
+    ext.pod_target_xcconfig =   'OTHER_SWIFT_FLAGS[config=Debug]' => '-DOAUTH_APP_EXTENSIONS'
+	ext.pod_target_xcconfig =   'OTHER_SWIFT_FLAGS[config=Release]' => '-DOAUTH_APP_EXTENSIONS'
+  end
+  
   s.swift_version = '4.2'
   s.ios.deployment_target = '9.0'
   s.osx.deployment_target = '10.10'
