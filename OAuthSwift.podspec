@@ -22,7 +22,11 @@ Pod::Spec.new do |s|
     # For app extensions, disabling code paths using unavailable API
 #    ext.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS[config=Debug]' => '-D', 'OAUTH_APP_EXTENSIONS' }
 #    ext.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS[config=Release]' => '-D', 'OAUTH_APP_EXTENSIONS' }
-    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS' => '$(inherited) -D OAUTH_APP_EXTENSIONS'
+    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS[config=Debug]' => '-D', 'OAUTH_APP_EXTENSIONS'
+    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS[config=Release]' => '-D', 'OAUTH_APP_EXTENSIONS'
+    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS[config=Debug]' => '-DOAUTH_APP_EXTENSIONS'
+    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS[config=Release]' => '-DOAUTH_APP_EXTENSIONS'
+#    ext.pod_target_xcconfig = 'OTHER_SWIFT_FLAGS' => '$(inherited) -D OAUTH_APP_EXTENSIONS'
   end
   
   s.swift_version = '4.2'
