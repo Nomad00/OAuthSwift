@@ -12,15 +12,16 @@ Pod::Spec.new do |s|
   s.source = { git: 'https://github.com/OAuthSwift/OAuthSwift.git', tag: s.version }
 
   s.default_subspec = 'Core'
-  s.subspec = 'Core' do |core|
+
+  s.subspec 'Core' do |core|
     core.source_files = 'Sources/*.swift'
   end
 
-  s.subspec = 'AppExtension' do |ext|
+  s.subspec 'AppExtension' do |ext|
     ext.source_files = 'Sources/*.swift'
     # For app extensions, disabling code paths using unavailable API
-    ext.pod_target_xcconfig =   'OTHER_SWIFT_FLAGS[config=Debug]' => '-DOAUTH_APP_EXTENSIONS'
-    ext.pod_target_xcconfig =   'OTHER_SWIFT_FLAGS[config=Release]' => '-DOAUTH_APP_EXTENSIONS'
+    ext.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS[config=Debug]' => '-DOAUTH_APP_EXTENSIONS' }
+    ext.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS[config=Release]' => '-DOAUTH_APP_EXTENSIONS' }
   end
   
   s.swift_version = '4.2'
