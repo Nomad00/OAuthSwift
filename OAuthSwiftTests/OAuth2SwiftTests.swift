@@ -10,42 +10,46 @@ import XCTest
 @testable import OAuthSwift
 
 class OAuth2SwiftTests: XCTestCase {
-
-    let server = TestServer()
-    let callbackURL = "test://callback"
     
-    override func setUp() {
+    static let server = TestServer()
+    var server: TestServer { return OAuth2SwiftTests.server }
+
+    override class func setUp() {
         super.setUp()
         do {
+            server.port = 8902
             try server.start()
-        }catch {
-            XCTFail("Failed to start server")
+        }catch let e {
+            XCTFail("Failed to start server \(e)")
         }
     }
-
-    override func tearDown() {
+    
+    override class func tearDown() {
         server.stop()
         super.tearDown()
     }
     
+    let callbackURL = "test://callback"
 
     func testDataSuccess() {
         objc_sync_enter(server)
-        testSuccess(.Data, response: .Code("code"))
+        let state = generateState(withLength: 20)
+        testSuccess(.data, response: .code("code", state:state))
         objc_sync_exit(server)
     }
     func testJSON_Code_Success() {
         objc_sync_enter(server)
-        testSuccess(.JSON, response: .Code("code"))
+        let state = generateState(withLength: 20)
+        testSuccess(.json, response: .code("code", state:state))
         objc_sync_exit(server)
     }
     func testJSON_AccessToken_Success() {
         objc_sync_enter(server)
-        testSuccess(.JSON, response: .AccessToken(server.oauth_token))
+        testSuccess(.json, response: .accessToken(server.oauth_token))
         objc_sync_exit(server)
     }
 
-    func testSuccess(accessReturnType: TestServer.AccessReturnType, response: AccessTokenResponse) {
+    func testSuccess(_ accessReturnType: TestServer.AccessReturnType, response: AccessTokenResponse) {
         let oauth = OAuth2Swift(
             consumerKey: server.valid_key,
             consumerSecret: server.valid_secret,
@@ -58,39 +62,45 @@ class OAuth2SwiftTests: XCTestCase {
         let handler = TestOAuthSwiftURLHandler(
             callbackURL: callbackURL,
             authorizeURL: server.authorizeURL,
-            version: .OAuth2
+            version: .oauth2
         )
         handler.accessTokenResponse = response
-        oauth.authorize_url_handler = handler
+        oauth.authorizeURLHandler = handler
         
-        let expectation = expectationWithDescription("request should succeed")
-        
-        let state: String = generateStateWithLength(20) as String
-        oauth.authorizeWithCallbackURL(NSURL(string:callbackURL)!, scope: "all", state: state, params: [:],
-            success: { (credential, response, parameters) -> Void in
+        let expectation = self.expectation(description: "request should succeed")
+
+		var state = ""
+		if case .code(_, let extractedState) = response {
+			state = extractedState ?? ""
+		}
+        let _ = oauth.authorize(
+            withCallbackURL: URL(string:callbackURL)!, scope: "all", state: state, parameters: [:],
+            success: { credential, response, parameters in
                 expectation.fulfill()
-            }) { (error) -> Void in
+            },
+            failure: { error in
                 XCTFail("The failure handler should not be called.\(error)")
-        }
-
-        waitForExpectationsWithTimeout(DefaultTimeout, handler: nil)
-
-        XCTAssertEqual(oauth.client.credential.oauth_token, server.oauth_token)
+            }
+        )
+        
+        waitForExpectations(timeout: DefaultTimeout, handler: nil)
+        
+        XCTAssertEqual(oauth.client.credential.oauthToken, server.oauth_token)
     }
     
     func testJSON_Error_Failure() {
         objc_sync_enter(server)
-        testFailure(.JSON, response: .Error("bad", "very bad"))
+        testFailure(.json, response: .error("bad", "very bad"))
         objc_sync_exit(server)
     }
 
     func testJSON_None_Failure() {
         objc_sync_enter(server)
-        testFailure(.JSON, response: .None)
+        testFailure(.json, response: .none)
         objc_sync_exit(server)
     }
     
-    func testFailure(accessReturnType: TestServer.AccessReturnType, response: AccessTokenResponse) {
+    func testFailure(_ accessReturnType: TestServer.AccessReturnType, response: AccessTokenResponse) {
         let oauth = OAuth2Swift(
             consumerKey: server.valid_key,
             consumerSecret: server.valid_secret,
@@ -103,26 +113,29 @@ class OAuth2SwiftTests: XCTestCase {
         let handler = TestOAuthSwiftURLHandler(
             callbackURL: callbackURL,
             authorizeURL: server.authorizeURL,
-            version: .OAuth2
+            version: .oauth2
         )
         handler.accessTokenResponse = response
-        oauth.authorize_url_handler = handler
+        oauth.authorizeURLHandler = handler
         
-        let expectation = expectationWithDescription("request should failed")
+        let expectation = self.expectation(description: "request should failed")
         
-        let state: String = generateStateWithLength(20) as String
-        oauth.authorizeWithCallbackURL(NSURL(string:callbackURL)!, scope: "all", state: state, params: [:],
-            success: { (credential, response, parameters) -> Void in
+        let state = generateState(withLength: 20)
+        let _ = oauth.authorize(
+            withCallbackURL: URL(string:callbackURL)!, scope: "all", state: state, parameters: [:],
+            success: { credential, response, parameters in
                 XCTFail("The success handler should not be called.")
-            }) { (error) -> Void in
+            },
+            failure: { error in
                 expectation.fulfill()
-        }
+            }
+        )
         
-        waitForExpectationsWithTimeout(DefaultTimeout, handler: nil)
+        waitForExpectations(timeout: DefaultTimeout, handler: nil)
     }
     
     func testExpire() {
-        let expectation = expectationWithDescription("request should failed")
+        let expectation = self.expectation(description: "request should failed")
         
         
         let oauth = OAuth2Swift(
@@ -132,34 +145,38 @@ class OAuth2SwiftTests: XCTestCase {
             accessTokenUrl: server.accessTokenURLV2,
             responseType: "code"
         )
-        oauth.client.get(server.expireURLV2, parameters: [:],
-            success: {
-                data, response in
-                XCTFail("\(data).")
-            }, failure: { error in
-                print(error.code)
-                if error.code == 401 {
-                    if let reponseHeaders = error.userInfo["Response-Headers"] as? [String:String],
-                        authenticateHeader = reponseHeaders["WWW-Authenticate"] ?? reponseHeaders["Www-Authenticate"] {
+        let _ = oauth.client.get(
+            server.expireURLV2, parameters: [:],
+            success: { response in
+                XCTFail("data receive \(response.data).")
+            },
+            failure: { error in
+                switch error {
+                case .tokenExpired(let error):
+                    expectation.fulfill()
+                    
+                    // additional check about origin error
+                    let nserror = error as NSError?
+                    if nserror?.code == 401 {
+                        if let reponseHeaders = nserror?.userInfo["Response-Headers"] as? [String:String],
+                            let authenticateHeader = reponseHeaders["WWW-Authenticate"] ?? reponseHeaders["Www-Authenticate"] {
                             print(authenticateHeader)
                             
-                            expectation.fulfill()
                             
                             let headerDictionary = authenticateHeader.headerDictionary
-                            print(headerDictionary["error"])
-                            print(headerDictionary["error_description"])
+                            print(headerDictionary["error"] ?? "no error")
+                            print(headerDictionary["error_description"] ?? "no error description")
+                        }
+                        else {
+                            XCTFail("\(String(describing: error)).")
+                        }
                     }
-                    else {
-                          XCTFail("\(error).")
-                    }
-                    
+                default:
+                    XCTFail("Wrong exception type \(error)")
                 }
-                
-        })
-        
-        
-        
-        waitForExpectationsWithTimeout(DefaultTimeout, handler: nil)
+            }
+        )
+        waitForExpectations(timeout: DefaultTimeout, handler: nil)
     }
     
 

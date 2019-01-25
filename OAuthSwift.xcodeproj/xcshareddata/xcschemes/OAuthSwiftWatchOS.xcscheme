@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "F43502791A6791B200038A29"
+               BlueprintIdentifier = "C40890BF1C11B37000E3146A"
                BuildableName = "OAuthSwift.framework"
-               BlueprintName = "OAuthSwift"
+               BlueprintName = "OAuthSwiftWatchOS"
                ReferencedContainer = "container:OAuthSwift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,15 +29,6 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F43502791A6791B200038A29"
-            BuildableName = "OAuthSwift.framework"
-            BlueprintName = "OAuthSwift"
-            ReferencedContainer = "container:OAuthSwift.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -54,9 +45,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F43502791A6791B200038A29"
+            BlueprintIdentifier = "C40890BF1C11B37000E3146A"
             BuildableName = "OAuthSwift.framework"
-            BlueprintName = "OAuthSwift"
+            BlueprintName = "OAuthSwiftWatchOS"
             ReferencedContainer = "container:OAuthSwift.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -72,9 +63,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F43502791A6791B200038A29"
+            BlueprintIdentifier = "C40890BF1C11B37000E3146A"
             BuildableName = "OAuthSwift.framework"
-            BlueprintName = "OAuthSwift"
+            BlueprintName = "OAuthSwiftWatchOS"
             ReferencedContainer = "container:OAuthSwift.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
